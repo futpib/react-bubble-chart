@@ -1,3 +1,4 @@
+/* global window */
 //------------------------------------------------------------------------------
 // Copyright Jonathan Kaufman Corp. 2015
 //
@@ -14,9 +15,9 @@
 // limitations under the License.
 //------------------------------------------------------------------------------
 
+import React from 'react';
+import ReactDOM from 'react-dom';
 import ReactBubbleChartD3 from './ReactBubbleChartD3';
-import React              from 'react';
-import ReactDOM           from 'react-dom';
 
 // Description of props!
 
@@ -134,14 +135,14 @@ import ReactDOM           from 'react-dom';
 class ReactBubbleChart extends React.Component {
   constructor(props) {
     super(props);
-    // define the method this way so that we have a clear reference to it
+    // Define the method this way so that we have a clear reference to it
     // this is necessary so that window.removeEventListener will work properly
     this.handleResize = (e => this._handleResize(e));
   }
 
   /** Render town */
   render() {
-    return <div className={"bubble-chart-container " + this.props.className}></div>;
+    return <div className={'bubble-chart-container ' + this.props.className}></div>;
   }
 
   /** When we mount, intialize resize handler and create the bubbleChart */
@@ -163,7 +164,7 @@ class ReactBubbleChart extends React.Component {
       fixedDomain: this.props.fixedDomain,
       selectedColor: this.props.selectedColor,
       selectedTextColor: this.props.selectedTextColor,
-      onClick: this.props.onClick || () => {},
+      onClick: this.props.onClick || (() => {}),
       smallDiameter: this.props.smallDiameter,
       mediumDiameter: this.props.mediumDiameter,
       legendSpacing: this.props.legendSpacing,
@@ -173,8 +174,8 @@ class ReactBubbleChart extends React.Component {
       tooltipFunc: this.props.tooltipFunc,
       fontSizeFactor: this.props.fontSizeFactor,
       duration: this.props.duration,
-      delay: this.props.delay
-    }
+      delay: this.props.delay,
+    };
   }
 
   /** When we're piecing out, remove the handler and destroy the chart */
@@ -189,8 +190,11 @@ class ReactBubbleChart extends React.Component {
   }
 
   /** On a debounce, adjust the size of our graph area and then update the chart */
-  _handleResize(e) {
-    this.__resizeTimeout && clearTimeout(this.__resizeTimeout);
+  _handleResize() {
+    if (this.__resizeTimeout) {
+      clearTimeout(this.__resizeTimeout);
+    }
+
     this.__resizeTimeout = setTimeout(() => {
       this.bubbleChart.adjustSize(this.getDOMNode());
       this.bubbleChart.update(this.getDOMNode(), this.getChartState());
