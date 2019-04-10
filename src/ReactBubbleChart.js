@@ -164,7 +164,7 @@ class ReactBubbleChart extends React.Component {
       fixedDomain: this.props.fixedDomain,
       selectedColor: this.props.selectedColor,
       selectedTextColor: this.props.selectedTextColor,
-      onClick: this.props.onClick || (() => {}),
+      onClick: this.props.onClick,
       smallDiameter: this.props.smallDiameter,
       mediumDiameter: this.props.mediumDiameter,
       legendSpacing: this.props.legendSpacing,
@@ -172,6 +172,7 @@ class ReactBubbleChart extends React.Component {
       tooltip: this.props.tooltip,
       tooltipProps: this.props.tooltipProps,
       tooltipFunc: this.props.tooltipFunc,
+      tooltipShouldShow: this.props.tooltipShouldShow,
       fontSizeFactor: this.props.fontSizeFactor,
       duration: this.props.duration,
       delay: this.props.delay,
@@ -189,6 +190,10 @@ class ReactBubbleChart extends React.Component {
     return ReactDOM.findDOMNode(this);
   }
 
+  triggerTooltip(nodeId) {
+    this.bubbleChart.triggerTooltip(nodeId);
+  }
+
   /** On a debounce, adjust the size of our graph area and then update the chart */
   _handleResize() {
     if (this.__resizeTimeout) {
@@ -202,5 +207,10 @@ class ReactBubbleChart extends React.Component {
     }, 200);
   }
 }
+
+ReactBubbleChart.defaultProps = {
+  onClick: () => {},
+  tooltipShouldShow: () => true,
+};
 
 export default ReactBubbleChart;

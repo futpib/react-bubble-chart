@@ -221,6 +221,18 @@ A function that is passed the domNode, the d3 data object, and the color of the
 tooltip on hover. Can be used if you want to do fancier dom stuff than just set
 some text values.
 
+### `tooltipShouldShow` (optional)
+
+A function that is passed the d3 data object to determine if the node hover should
+should trigger tooltip.
+
+### `instance.triggerTooltip(_id)`
+
+An instance method to trigger the tooltip programmatically. Pass the d3 data object
+`_id` value, and a tooltip will be displayed for the node with given `_id`.
+
+Intended for use with react refs.
+
 ### `selectedColor` (optional)
 
 String hex value.

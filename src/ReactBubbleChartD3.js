@@ -40,6 +40,7 @@ const classnames = xs => xs.filter(Boolean).join(' ');
  */
 export default class ReactBubbleChartD3 {
   constructor(el, props = {}) {
+    this.container = el;
     this.legendSpacing = typeof props.legendSpacing === 'number' ? props.legendSpacing : 3;
     this.selectedColor = props.selectedColor;
     this.selectedTextColor = props.selectedTextColor;
@@ -148,6 +149,7 @@ export default class ReactBubbleChartD3 {
   configureTooltip(el, props) {
     this.createTooltip = props.tooltip;
     this.tooltipFunc = props.tooltipFunc;
+    this.tooltipShouldShow = props.tooltipShouldShow;
     // Remove all existing divs from the tooltip
     this.tooltip.selectAll('div').remove();
     // Intialize the styling
@@ -256,16 +258,17 @@ export default class ReactBubbleChartD3 {
       .sum(d => d.value);
 
     // Assign new data to existing DOM for circles and labels
-    const circles = this.svg.selectAll('circle')
+    this.circles = this.svg.selectAll('circle')
       .data(this.bubble(nodes).descendants(), d => 'g' + d.data._id);
-    const labels = this.html.selectAll('.bubble-label')
+    this.labels = this.html.selectAll('.bubble-label')
       .data(this.bubble(nodes).descendants(), d => 'g' + d.data._id);
 
     // Update - this is created before enter.append. it only applies to updating nodes.
     // create the transition on the updating elements before the entering elements
     // because enter.append merges entering elements into the update selection
     // for circles we transition their transform, r, and fill
-    circles.transition()
+    this.circles
+      .transition()
       .duration(duration)
       .delay((d, i) => i * delay)
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
@@ -273,8 +276,8 @@ export default class ReactBubbleChartD3 {
       .style('opacity', 1)
       .style('fill', d => this.getCircleColor(d));
     // For the labels we transition their height, width, left, top, and color
-    labels
-      .on('mouseover', this._tooltipMouseOver.bind(this, el))
+    this.labels
+      .on('mouseover', this._tooltipMouseOver.bind(this))
       .transition()
       .duration(duration)
       .delay((d, i) => i * delay)
@@ -291,7 +294,7 @@ export default class ReactBubbleChartD3 {
     // Enter - only applies to incoming elements (once emptying data)
     if (this.bubble(nodes).descendants().length > 0) {
       // Initialize new circles
-      circles.enter()
+      this.circles.enter()
         .filter(d => !d.children)
         .append('circle')
         .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
@@ -308,14 +311,14 @@ export default class ReactBubbleChartD3 {
         .attr('r', d => d.r)
         .style('opacity', 1);
       // Intialize new labels
-      labels.enter().append('div')
+      this.labels.enter().append('div')
         .attr('class', d => this.getLabelClass(d))
         .text(d => d.data.displayText || d.data._id)
         .on('click', d => {
           d3.event.stopPropagation();
           props.onClick(d);
         })
-        .on('mouseover', this._tooltipMouseOver.bind(this, el))
+        .on('mouseover', this._tooltipMouseOver.bind(this))
         .on('mouseout', this._tooltipMouseOut.bind(this))
         .style('position', 'absolute')
         .style('height', d => 2 * d.r + 'px')
@@ -332,7 +335,7 @@ export default class ReactBubbleChartD3 {
 
     // Exit - only applies to... exiting elements
     // for circles have them shrink to 0 as they're flying all over
-    circles.exit()
+    this.circles.exit()
       .transition()
       .duration(duration)
       .attr('transform', d => {
@@ -346,7 +349,7 @@ export default class ReactBubbleChartD3 {
       .attr('r', 0)
       .remove();
     // For text have them fade out as they're flying all over
-    labels.exit()
+    this.labels.exit()
       .transition()
       .duration(duration)
       .style('top', d => {
@@ -373,13 +376,13 @@ export default class ReactBubbleChartD3 {
    * On mouseover of a bubble, populate the tooltip with that elements info
    * (if this.createTooltip is true of course)
    */
-  _tooltipMouseOver(el, d) {
+  _tooltipMouseOver(d) {
     if (!this.createTooltip) {
       return;
     }
 
-    for (const { css, prop, display } of this.tooltipProps) {
-      this.tooltip.select('.' + css).html((display ? display + ': ' : '') + d.data[prop]);
+    if (!this.tooltipShouldShow(d)) {
+      return;
     }
 
     // Fade the popup fill mixing the shape fill with 80% white
@@ -389,12 +392,20 @@ export default class ReactBubbleChartD3 {
       d3.rgb(fill).g + 0.8 * (255 - d3.rgb(fill).g),
       d3.rgb(fill).b + 0.8 * (255 - d3.rgb(fill).b)
     );
-    this.tooltip.style('display', 'block');
 
     const tooltipNode = this.tooltip.node();
     if (this.tooltipFunc) {
-      this.tooltipFunc(tooltipNode, d, fill);
+      const result = this.tooltipFunc(tooltipNode, d, fill);
+      if (result === false) {
+        return;
+      }
     }
+
+    for (const { css, prop, display } of this.tooltipProps) {
+      this.tooltip.select('.' + css).html((display ? display + ': ' : '') + d.data[prop]);
+    }
+
+    this.tooltip.style('display', 'block');
 
     const width = tooltipNode.offsetWidth + 1; // +1 for rounding reasons
     const height = tooltipNode.offsetHeight;
@@ -408,8 +419,8 @@ export default class ReactBubbleChartD3 {
     if (d.y - height < 0) {
       top = buffer;
     // If it goes below the bounds, have its buttom be a buffer length away
-    } else if (d.y + height / 2 > el.offsetHeight) {
-      top = el.offsetHeight - height - buffer;
+    } else if (d.y + height / 2 > this.container.offsetHeight) {
+      top = this.container.offsetHeight - height - buffer;
     // Otherwise smack this bad boy in the middle of its bubble
     } else {
       top = d.y - height / 2;
@@ -421,14 +432,14 @@ export default class ReactBubbleChartD3 {
     // the tooltip out of bounds.
     let left;
     // If there's room to put it on the right of the bubble, do so
-    if (d.x + d.r + width + buffer < el.offsetWidth) {
+    if (d.x + d.r + width + buffer < this.container.offsetWidth) {
       left = d.x + d.r + buffer;
     // If there's room to put it on the left of the bubble, do so
     } else if (d.x - d.r - width - buffer > 0) {
       left = d.x - d.r - width - buffer;
     // Otherwise put it on the right part of its container
     } else {
-      left = el.offsetWidth - width - buffer;
+      left = this.container.offsetWidth - width - buffer;
     }
 
     this.tooltip.style('background-color', backgroundColor)
@@ -441,8 +452,12 @@ export default class ReactBubbleChartD3 {
   /**
    * On tooltip mouseout, hide the tooltip.
    */
-  _tooltipMouseOut() {
+  _tooltipMouseOut(d) {
     if (!this.createTooltip) {
+      return;
+    }
+
+    if (!this.tooltipShouldShow(d)) {
       return;
     }
 
@@ -450,6 +465,19 @@ export default class ReactBubbleChartD3 {
       .style('width', '')
       .style('top', '')
       .style('left', '');
+  }
+
+  triggerTooltip(nodeId) {
+    const d = this.circles
+      .enter()
+      .data()
+      .find(d => d.data._id === nodeId);
+
+    if (!d) {
+      return;
+    }
+
+    this._tooltipMouseOver(d);
   }
 
   /** Any necessary cleanup */
