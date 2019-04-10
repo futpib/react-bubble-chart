@@ -16,6 +16,8 @@
 
 import * as d3 from 'd3';
 
+const classnames = xs => xs.filter(Boolean).join(' ');
+
 /**
  * Properties defined during construction:
  *   svg
@@ -165,6 +167,39 @@ export default class ReactBubbleChartD3 {
     }
   }
 
+  getCircleColor(d) {
+    if (d.data.selected && this.selectedColor) {
+      return this.selectedColor;
+    }
+
+    return this.color(d.data.colorValue);
+  }
+
+  getLabelColor(d) {
+    if (d.data.selected && this.selectedTextColor) {
+      return this.selectedTextColor;
+    }
+
+    return this.textColor(d.data.colorValue);
+  }
+
+  getLabelClass(d) {
+    let size;
+    if (2 * d.r < this.smallDiameter) {
+      size = 'small';
+    } else if (2 * d.r < this.mediumDiameter) {
+      size = 'medium';
+    } else {
+      size = 'large';
+    }
+
+    return classnames([
+      'bubble-label',
+      size,
+      d.data.selected && 'selected',
+    ]);
+  }
+
   /**
    * This is where the magic happens.
    * Update the tooltip and legend.
@@ -201,7 +236,7 @@ export default class ReactBubbleChartD3 {
     const { delay } = this;
 
     // Define a color scale for our colorValues
-    const color = d3.scaleQuantize()
+    this.color = d3.scaleQuantize()
       .domain([
         props.fixedDomain ? props.fixedDomain.min : d3.min(data, d => d.data.colorValue),
         props.fixedDomain ? props.fixedDomain.max : d3.max(data, d => d.data.colorValue),
@@ -209,7 +244,7 @@ export default class ReactBubbleChartD3 {
       .range(this.colorRange);
 
     // Define a color scale for text town
-    const textColor = d3.scaleQuantize()
+    this.textColor = d3.scaleQuantize()
       .domain([
         props.fixedDomain ? props.fixedDomain.min : d3.min(data, d => d.data.colorValue),
         props.fixedDomain ? props.fixedDomain.max : d3.max(data, d => d.data.colorValue),
@@ -236,10 +271,10 @@ export default class ReactBubbleChartD3 {
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
       .attr('r', d => d.r)
       .style('opacity', 1)
-      .style('fill', d => d.data.selected ? this.selectedColor : color(d.data.colorValue));
+      .style('fill', d => this.getCircleColor(d));
     // For the labels we transition their height, width, left, top, and color
     labels
-      .on('mouseover', this._tooltipMouseOver.bind(this, color, el))
+      .on('mouseover', this._tooltipMouseOver.bind(this, el))
       .transition()
       .duration(duration)
       .delay((d, i) => i * delay)
@@ -248,19 +283,8 @@ export default class ReactBubbleChartD3 {
       .style('left', d => d.x - d.r + 'px')
       .style('top', d => d.y - d.r + 'px')
       .style('opacity', 1)
-      .style('color', d => d.data.selected ? this.selectedTextColor : textColor(d.data.colorValue))
-      .attr('class', d => {
-        let size;
-        if (2 * d.r < this.smallDiameter) {
-          size = 'small';
-        } else if (2 * d.r < this.mediumDiameter) {
-          size = 'medium';
-        } else {
-          size = 'large';
-        }
-
-        return 'bubble-label ' + size;
-      })
+      .style('color', d => this.getLabelColor(d))
+      .attr('class', d => this.getLabelClass(d))
       // We can pass in a fontSizeFactor here to set the label font-size as a factor of its corresponding circle's radius; this overrides CSS font-size styles set with the small, medium and large classes
       .style('font-size', d => fontFactor ? fontFactor * d.r + 'px' : null);
 
@@ -272,8 +296,12 @@ export default class ReactBubbleChartD3 {
         .append('circle')
         .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
         .attr('r', 0)
-        .attr('class', d => d.children ? 'bubble' : 'bubble leaf')
-        .style('fill', d => d.data.selected ? this.selectedColor : color(d.data.colorValue))
+        .attr('class', d => classnames([
+          'bubble',
+          !d.children && 'leaf',
+          d.data.selected && 'selected',
+        ]))
+        .style('fill', d => this.getCircleColor(d))
         .transition()
         .duration(duration * 1.2)
         .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
@@ -281,31 +309,20 @@ export default class ReactBubbleChartD3 {
         .style('opacity', 1);
       // Intialize new labels
       labels.enter().append('div')
-        .attr('class', d => {
-          let size;
-          if (2 * d.r < this.smallDiameter) {
-            size = 'small';
-          } else if (2 * d.r < this.mediumDiameter) {
-            size = 'medium';
-          } else {
-            size = 'large';
-          }
-
-          return 'bubble-label ' + size;
-        })
+        .attr('class', d => this.getLabelClass(d))
         .text(d => d.data.displayText || d.data._id)
         .on('click', d => {
           d3.event.stopPropagation();
           props.onClick(d);
         })
-        .on('mouseover', this._tooltipMouseOver.bind(this, color, el))
+        .on('mouseover', this._tooltipMouseOver.bind(this, el))
         .on('mouseout', this._tooltipMouseOut.bind(this))
         .style('position', 'absolute')
         .style('height', d => 2 * d.r + 'px')
         .style('width', d => 2 * d.r + 'px')
         .style('left', d => d.x - d.r + 'px')
         .style('top', d => d.y - d.r + 'px')
-        .style('color', d => d.data.selected ? this.selectedTextColor : textColor(d.data.colorValue))
+        .style('color', d => this.getLabelColor(d))
         .style('opacity', 0)
         .transition()
         .duration(duration * 1.2)
@@ -356,7 +373,7 @@ export default class ReactBubbleChartD3 {
    * On mouseover of a bubble, populate the tooltip with that elements info
    * (if this.createTooltip is true of course)
    */
-  _tooltipMouseOver(color, el, d) {
+  _tooltipMouseOver(el, d) {
     if (!this.createTooltip) {
       return;
     }
@@ -366,7 +383,7 @@ export default class ReactBubbleChartD3 {
     }
 
     // Fade the popup fill mixing the shape fill with 80% white
-    const fill = color(d.data.colorValue);
+    const fill = this.color(d.data.colorValue);
     const backgroundColor = d3.rgb(
       d3.rgb(fill).r + 0.8 * (255 - d3.rgb(fill).r),
       d3.rgb(fill).g + 0.8 * (255 - d3.rgb(fill).g),
