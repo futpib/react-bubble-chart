@@ -1,5 +1,5 @@
 {
-  "name": "react-bubble-chart",
+  "name": "@futpib/react-bubble-chart",
   "version": "0.4.0",
   "description": "A React+D3 animated bubble chart",
   "main": "lib/ReactBubbleChart.js",
