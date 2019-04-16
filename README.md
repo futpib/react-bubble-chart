@@ -221,6 +221,8 @@ A function that is passed the domNode, the d3 data object, and the color of the
 tooltip on hover. Can be used if you want to do fancier dom stuff than just set
 some text values.
 
+If `tooltipFunc` returns `false`, tooltip will not be rendered.
+
 ### `tooltipShouldShow` (optional)
 
 A function that is passed the d3 data object to determine if the node hover should
