@@ -431,18 +431,24 @@ export default class ReactBubbleChartD3 {
     // of the bubble. we need to account for the case where this puts
     // the tooltip out of bounds.
     let left;
+    let side = 'right';
     // If there's room to put it on the right of the bubble, do so
     if (d.x + d.r + width + buffer < this.container.offsetWidth) {
       left = d.x + d.r + buffer;
     // If there's room to put it on the left of the bubble, do so
     } else if (d.x - d.r - width - buffer > 0) {
       left = d.x - d.r - width - buffer;
+      side = 'left';
     // Otherwise put it on the right part of its container
     } else {
       left = this.container.offsetWidth - width - buffer;
     }
 
-    this.tooltip.style('background-color', backgroundColor)
+    this.tooltip.classed('left right', false);
+    this.tooltip.classed(side, true);
+
+    this.tooltip
+      .style('background-color', backgroundColor)
       .style('border-color', fill)
       .style('width', width + 'px')
       .style('left', left + 'px')
