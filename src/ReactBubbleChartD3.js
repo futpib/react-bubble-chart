@@ -410,16 +410,21 @@ export default class ReactBubbleChartD3 {
     const width = tooltipNode.offsetWidth + 1; // +1 for rounding reasons
     const height = tooltipNode.offsetHeight;
     const buffer = 5;
+    const htmlNode = this.html.node();
+    const origin = {
+      x: htmlNode.offsetLeft,
+      y: htmlNode.offsetTop,
+    };
 
     // Calculate where the top is going to be. ideally it is
     // (d.y - height/2) which'll put the tooltip in the middle of the bubble.
     // we need to account for if this'll put it out of bounds.
     let top;
     // If it goes above the bounds, have the top be the buffer
-    if (d.y - height < 0) {
+    if (origin.y + d.y - height < 0) {
       top = buffer;
     // If it goes below the bounds, have its buttom be a buffer length away
-    } else if (d.y + height / 2 > this.container.offsetHeight) {
+    } else if (origin.y + d.y + height / 2 > this.container.offsetHeight) {
       top = this.container.offsetHeight - height - buffer;
     // Otherwise smack this bad boy in the middle of its bubble
     } else {
@@ -433,10 +438,10 @@ export default class ReactBubbleChartD3 {
     let left;
     let side = 'right';
     // If there's room to put it on the right of the bubble, do so
-    if (d.x + d.r + width + buffer < this.container.offsetWidth) {
+    if (origin.x + d.x + d.r + width + buffer < this.container.offsetWidth) {
       left = d.x + d.r + buffer;
     // If there's room to put it on the left of the bubble, do so
-    } else if (d.x - d.r - width - buffer > 0) {
+    } else if (origin.x + d.x - d.r - width - buffer > 0) {
       left = d.x - d.r - width - buffer;
       side = 'left';
     // Otherwise put it on the right part of its container
