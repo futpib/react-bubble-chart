@@ -16,7 +16,6 @@
 //------------------------------------------------------------------------------
 
 import React from 'react';
-import ReactDOM from 'react-dom';
 import ReactBubbleChartD3 from './ReactBubbleChartD3';
 
 // Description of props!
@@ -138,22 +137,32 @@ class ReactBubbleChart extends React.Component {
     // Define the method this way so that we have a clear reference to it
     // this is necessary so that window.removeEventListener will work properly
     this.handleResize = (e => this._handleResize(e));
+
+    this.containerRef = React.createRef();
   }
 
   /** Render town */
   render() {
-    return <div className={'bubble-chart-container ' + this.props.className}></div>;
+    return (
+      <div
+        ref={this.containerRef}
+        className={'bubble-chart-container ' + this.props.className}
+      />
+    );
   }
 
   /** When we mount, intialize resize handler and create the bubbleChart */
   componentDidMount() {
     window.addEventListener('resize', this.handleResize);
-    this.bubbleChart = new ReactBubbleChartD3(this.getDOMNode(), this.getChartState());
+    this.bubbleChart = new ReactBubbleChartD3(
+      this.containerRef.current,
+      this.getChartState(),
+    );
   }
 
   /** When we update, update our friend, the bubble chart */
   componentDidUpdate() {
-    this.bubbleChart.update(this.getDOMNode(), this.getChartState());
+    this.bubbleChart.update(this.getChartState());
   }
 
   /** Define what props get passed down to the d3 chart */
@@ -182,12 +191,7 @@ class ReactBubbleChart extends React.Component {
   /** When we're piecing out, remove the handler and destroy the chart */
   componentWillUnmount() {
     window.removeEventListener('resize', this.handleResize);
-    this.bubbleChart.destroy(this.getDOMNode());
-  }
-
-  /** Helper method to reference this dom node */
-  getDOMNode() {
-    return ReactDOM.findDOMNode(this);
+    this.bubbleChart.destroy(this.containerRef.current);
   }
 
   triggerTooltip(nodeId) {
@@ -201,8 +205,8 @@ class ReactBubbleChart extends React.Component {
     }
 
     this.__resizeTimeout = setTimeout(() => {
-      this.bubbleChart.adjustSize(this.getDOMNode());
-      this.bubbleChart.update(this.getDOMNode(), this.getChartState());
+      this.bubbleChart.adjustSize();
+      this.bubbleChart.update(this.getChartState());
       delete this.__resizeTimeout;
     }, 200);
   }

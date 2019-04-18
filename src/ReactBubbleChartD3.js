@@ -39,8 +39,8 @@ const classnames = xs => xs.filter(Boolean).join(' ');
  *   delay
  */
 export default class ReactBubbleChartD3 {
-  constructor(el, props = {}) {
-    this.container = el;
+  constructor(containerElement, props = {}) {
+    this.container = containerElement;
     this.legendSpacing = typeof props.legendSpacing === 'number' ? props.legendSpacing : 3;
     this.selectedColor = props.selectedColor;
     this.selectedTextColor = props.selectedTextColor;
@@ -50,18 +50,23 @@ export default class ReactBubbleChartD3 {
     this.duration = props.duration === undefined ? 500 : props.duration;
     this.delay = props.delay === undefined ? 7 : props.delay;
 
+    const containerSelection = d3.select(this.container);
+
     // Create an <svg> and <html> element - store a reference to it for later
-    this.svg = d3.select(el).append('svg')
+    this.svg = containerSelection
+      .append('svg')
       .attr('class', 'bubble-chart-d3')
       .style('overflow', 'visible');
-    this.html = d3.select(el).append('div')
+    this.html = containerSelection
+      .append('div')
       .attr('class', 'bubble-chart-text')
       .style('position', 'absolute')
       .style('left', 0) // Center horizontally
       .style('right', 0)
       .style('margin-left', 'auto')
       .style('margin-right', 'auto');
-    this.legend = d3.select(el).append('svg')
+    this.legend = containerSelection
+      .append('svg')
       .attr('class', 'bubble-legend')
       .style('overflow', 'visible')
       .style('position', 'absolute');
@@ -73,17 +78,17 @@ export default class ReactBubbleChartD3 {
       .style('padding', '5px')
       .style('z-index', 500);
     // Create legend and update
-    this.adjustSize(el);
-    this.update(el, props);
+    this.adjustSize();
+    this.update(props);
   }
 
   /**
    * Set this.diameter and this.bubble, also size this.svg and this.html
    */
-  adjustSize(el) {
+  adjustSize() {
     // Helper values for positioning
-    this.diameter = Math.min(el.offsetWidth, el.offsetHeight);
-    const top = Math.max((el.offsetHeight - this.diameter) / 2, 0);
+    this.diameter = Math.min(this.container.offsetWidth, this.container.offsetHeight);
+    const top = Math.max((this.container.offsetHeight - this.diameter) / 2, 0);
     // Center some stuff vertically
     this.svg.attr('width', this.diameter)
       .attr('height', this.diameter)
@@ -102,7 +107,7 @@ export default class ReactBubbleChartD3 {
   /**
    * Create and configure the legend
    */
-  configureLegend(el, props) {
+  configureLegend(props) {
     this.createLegend = props.legend;
     // For each color in the legend, remove any existing, then
     // create a g and set its transform
@@ -111,11 +116,14 @@ export default class ReactBubbleChartD3 {
       return;
     }
 
-    const legendRectSize = Math.min(((el.offsetHeight - 20) - (this.colorLegend.length - 1) * this.legendSpacing) / this.colorLegend.length, 18);
+    const legendRectSize = Math.min(
+      ((this.container.offsetHeight - 20) - (this.colorLegend.length - 1) * this.legendSpacing) / this.colorLegend.length,
+      18,
+    );
     const legendHeight = this.colorLegend.length * (legendRectSize + this.legendSpacing) - this.legendSpacing;
     this.legend.style('height', legendHeight + 'px')
       .style('width', legendRectSize + 'px')
-      .style('top', (el.offsetHeight - legendHeight) / 2 + 'px')
+      .style('top', (this.container.offsetHeight - legendHeight) / 2 + 'px')
       .style('left', 60 + 'px');
 
     const legendKeys = this.legend.selectAll('.legend-key')
@@ -146,7 +154,7 @@ export default class ReactBubbleChartD3 {
   /**
    * Create and configure the tooltip
    */
-  configureTooltip(el, props) {
+  configureTooltip(props) {
     this.shouldCreateTooltip = props.tooltip;
     this.tooltipFunc = props.tooltipFunc;
     this.tooltipShouldShow = props.tooltipShouldShow;
@@ -210,8 +218,8 @@ export default class ReactBubbleChartD3 {
    * Remove old bubbles.
    * Maintain consistencies between this.svg and this.html
    */
-  update(el, props) {
-    this.adjustSize(el);
+  update(props) {
+    this.adjustSize();
     // Initialize color legend values and color range values
     // color range is just an array of the hex values
     // color legend is an array of the color/text objects
@@ -225,8 +233,8 @@ export default class ReactBubbleChartD3 {
     this.textColorRange = colorLegend.map(c =>
       typeof c === 'string' ? '#000000' : (c.textColor || '#000000')
     );
-    this.configureLegend(el, props);
-    this.configureTooltip(el, props);
+    this.configureLegend(props);
+    this.configureTooltip(props);
 
     const { data } = props;
     if (!data) {
