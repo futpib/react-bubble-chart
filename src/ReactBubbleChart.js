@@ -132,22 +132,51 @@ import ReactBubbleChartD3 from './ReactBubbleChartD3';
 // for more info, see the README
 
 class ReactBubbleChart extends React.Component {
+  static getDerivedStateFromProps({ tooltipFunc, tooltipComponent }) {
+    return {
+      tooltipMode: tooltipFunc ? 'func' : (tooltipComponent ? 'component' : 'none'),
+    };
+  }
+
   constructor(props) {
     super(props);
+
+    this.state = {};
+
     // Define the method this way so that we have a clear reference to it
     // this is necessary so that window.removeEventListener will work properly
-    this.handleResize = (e => this._handleResize(e));
+    this.handleResize = this._handleResize.bind(this);
+    this.handleTooltip = this._handleTooltip.bind(this);
 
     this.containerRef = React.createRef();
+    this.tooltipRef = React.createRef();
   }
 
   /** Render town */
   render() {
+    const {
+      className,
+      tooltipClassName,
+      tooltipComponent: TooltipComponent,
+    } = this.props;
+    const { tooltipMode, tooltipComponentProps } = this.state;
+
     return (
       <div
         ref={this.containerRef}
-        className={'bubble-chart-container ' + this.props.className}
-      />
+        className={'bubble-chart-container ' + className}
+      >
+        <div
+          ref={this.tooltipRef}
+          className={'bubble-chart-tooltip ' + tooltipClassName}
+        >
+          {tooltipMode === 'component' && tooltipComponentProps && (
+            <TooltipComponent
+              {...tooltipComponentProps}
+            />
+          )}
+        </div>
+      </div>
     );
   }
 
@@ -156,7 +185,9 @@ class ReactBubbleChart extends React.Component {
     window.addEventListener('resize', this.handleResize);
     this.bubbleChart = new ReactBubbleChartD3(
       this.containerRef.current,
+      this.tooltipRef.current,
       this.getChartState(),
+      this.handleTooltip,
     );
   }
 
@@ -179,6 +210,7 @@ class ReactBubbleChart extends React.Component {
       legendSpacing: this.props.legendSpacing,
       legend: this.props.legend,
       tooltip: this.props.tooltip,
+      tooltipMode: this.state.tooltipMode,
       tooltipProps: this.props.tooltipProps,
       tooltipFunc: this.props.tooltipFunc,
       tooltipShouldShow: this.props.tooltipShouldShow,
@@ -210,9 +242,21 @@ class ReactBubbleChart extends React.Component {
       delete this.__resizeTimeout;
     }, 200);
   }
+
+  _handleTooltip(d) {
+    if (this.state.tooltipMode === 'component') {
+      this.setState({
+        tooltipComponentProps: {
+          d,
+        },
+      });
+    }
+  }
 }
 
 ReactBubbleChart.defaultProps = {
+  className: '',
+  tooltipClassName: '',
   onClick: () => {},
   tooltipShouldShow: () => true,
 };

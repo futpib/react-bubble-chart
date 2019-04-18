@@ -39,8 +39,9 @@ const classnames = xs => xs.filter(Boolean).join(' ');
  *   delay
  */
 export default class ReactBubbleChartD3 {
-  constructor(containerElement, props = {}) {
+  constructor(containerElement, tooltipElement, props = {}, onTooltip) {
     this.container = containerElement;
+    this.onTooltip = onTooltip;
     this.legendSpacing = typeof props.legendSpacing === 'number' ? props.legendSpacing : 3;
     this.selectedColor = props.selectedColor;
     this.selectedTextColor = props.selectedTextColor;
@@ -70,8 +71,8 @@ export default class ReactBubbleChartD3 {
       .attr('class', 'bubble-legend')
       .style('overflow', 'visible')
       .style('position', 'absolute');
-    this.tooltip = this.html.append('div')
-      .attr('class', 'tooltip')
+    this.tooltip = this.html
+      .append(() => tooltipElement)
       .style('position', 'absolute')
       .style('border-radius', '5px')
       .style('border', '3px solid')
@@ -156,24 +157,30 @@ export default class ReactBubbleChartD3 {
    */
   configureTooltip(props) {
     this.shouldCreateTooltip = props.tooltip;
+    this.tooltipMode = props.tooltipMode;
     this.tooltipFunc = props.tooltipFunc;
     this.tooltipShouldShow = props.tooltipShouldShow;
-    // Remove all existing divs from the tooltip
-    this.tooltip.selectAll('div').remove();
+
     // Intialize the styling
     this.tooltip.style('display', 'none');
+
     if (!this.shouldCreateTooltip) {
       return;
     }
 
-    // Normalize the prop formats
-    this.tooltipProps = (props.tooltipProps || []).map(tp =>
-      typeof tp === 'string' ? { css: tp, prop: tp, display: tp } : tp
-    );
-    // Create a div for each of the tooltip props
-    for (const { css } of this.tooltipProps) {
-      this.tooltip.append('div')
-        .attr('class', css);
+    if (this.tooltipMode === 'func') {
+      // Remove all existing divs from the tooltip
+      this.tooltip.selectAll('div').remove();
+
+      // Normalize the prop formats
+      this.tooltipProps = (props.tooltipProps || []).map(tp => {
+        return typeof tp === 'string' ? { css: tp, prop: tp, display: tp } : tp;
+      });
+      // Create a div for each of the tooltip props
+      for (const { css } of this.tooltipProps) {
+        this.tooltip.append('div')
+          .attr('class', css);
+      }
     }
   }
 
@@ -402,15 +409,19 @@ export default class ReactBubbleChartD3 {
     );
 
     const tooltipNode = this.tooltip.node();
-    if (this.tooltipFunc) {
+    if (this.tooltipMode === 'func') {
       const result = this.tooltipFunc(tooltipNode, d, fill);
       if (result === false) {
         return;
       }
     }
 
-    for (const { css, prop, display } of this.tooltipProps) {
-      this.tooltip.select('.' + css).html((display ? display + ': ' : '') + d.data[prop]);
+    this.onTooltip(d);
+
+    if (this.tooltipMode !== 'component') {
+      for (const { css, prop, display } of this.tooltipProps) {
+        this.tooltip.select('.' + css).html((display ? display + ': ' : '') + d.data[prop]);
+      }
     }
 
     this.tooltip.style('display', 'block');

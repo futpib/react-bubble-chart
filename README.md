@@ -223,6 +223,13 @@ some text values.
 
 If `tooltipFunc` returns `false`, tooltip will not be rendered.
 
+Mutually exclusive with `tooltipComponent`
+
+### `tooltipComponent` (optional)
+
+A component to be rendered as toolip body. Passed one prop named `d`, the d3 node
+that is being tooltipped. You probably want `d.data` to render the tooltip.
+
 ### `tooltipShouldShow` (optional)
 
 A function that is passed the d3 data object to determine if the node hover should
