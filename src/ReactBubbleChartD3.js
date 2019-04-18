@@ -147,14 +147,14 @@ export default class ReactBubbleChartD3 {
    * Create and configure the tooltip
    */
   configureTooltip(el, props) {
-    this.createTooltip = props.tooltip;
+    this.shouldCreateTooltip = props.tooltip;
     this.tooltipFunc = props.tooltipFunc;
     this.tooltipShouldShow = props.tooltipShouldShow;
     // Remove all existing divs from the tooltip
     this.tooltip.selectAll('div').remove();
     // Intialize the styling
     this.tooltip.style('display', 'none');
-    if (!this.createTooltip) {
+    if (!this.shouldCreateTooltip) {
       return;
     }
 
@@ -374,10 +374,10 @@ export default class ReactBubbleChartD3 {
 
   /**
    * On mouseover of a bubble, populate the tooltip with that elements info
-   * (if this.createTooltip is true of course)
+   * (if this.shouldCreateTooltip is true of course)
    */
   _tooltipMouseOver(d) {
-    if (!this.createTooltip) {
+    if (!this.shouldCreateTooltip) {
       return;
     }
 
@@ -464,7 +464,7 @@ export default class ReactBubbleChartD3 {
    * On tooltip mouseout, hide the tooltip.
    */
   _tooltipMouseOut(d) {
-    if (!this.createTooltip) {
+    if (!this.shouldCreateTooltip) {
       return;
     }
 
