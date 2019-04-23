@@ -132,7 +132,7 @@ import ReactBubbleChartD3 from './ReactBubbleChartD3';
 // for more info, see the README
 
 class ReactBubbleChart extends React.Component {
-  static getDerivedStateFromProps({ tooltipFunc, tooltipComponent, ...props }) {
+  static getDerivedStateFromProps({ tooltipFunc, tooltipComponent, ...props }, state) {
     const tooltipMode = tooltipFunc ? 'func' : (tooltipComponent ? 'component' : 'none');
 
     return {
@@ -155,6 +155,7 @@ class ReactBubbleChart extends React.Component {
         tooltipMode,
         tooltipFunc,
         tooltipShouldShow: props.tooltipShouldShow,
+        tooltippedDataId: state.tooltippedDataId,
 
         fontSizeFactor: props.fontSizeFactor,
         duration: props.duration,
@@ -217,8 +218,8 @@ class ReactBubbleChart extends React.Component {
   }
 
   /** When we update, update our friend, the bubble chart */
-  componentDidUpdate() {
-    this.bubbleChart.update(this.state.chartState);
+  componentDidUpdate(prevProps, prevState) {
+    this.bubbleChart.update(this.state.chartState, prevState.chartState);
   }
 
   /** When we're piecing out, remove the handler and destroy the chart */
@@ -234,19 +235,24 @@ class ReactBubbleChart extends React.Component {
     }
 
     this.__resizeTimeout = setTimeout(() => {
-      this.bubbleChart.update(this.state.chartState);
+      const { chartState } = this.state;
+      this.bubbleChart.update(chartState, chartState);
       delete this.__resizeTimeout;
     }, 200);
   }
 
-  _handleTooltip(d) {
-    if (this.state.tooltipMode === 'component') {
-      this.setState({
-        tooltipComponentProps: {
-          d,
-        },
-      });
+  _handleTooltip(tooltipped, d) {
+    const statePatch = {
+      tooltippedDataId: tooltipped ? d.data._id : null,
+    };
+
+    if (tooltipped && this.state.tooltipMode === 'component') {
+      statePatch.tooltipComponentProps = {
+        d,
+      };
     }
+
+    this.setState(statePatch);
   }
 }
 

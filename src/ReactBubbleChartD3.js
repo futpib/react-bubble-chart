@@ -73,6 +73,7 @@ export default class ReactBubbleChartD3 {
       .style('position', 'absolute');
     this.tooltip = this.html
       .append(() => tooltipElement)
+      .style('display', 'none')
       .style('position', 'absolute')
       .style('border-radius', '5px')
       .style('border', '3px solid')
@@ -80,7 +81,7 @@ export default class ReactBubbleChartD3 {
       .style('z-index', 500);
     // Create legend and update
     this.adjustSize();
-    this.update(props);
+    this.update(props, {});
   }
 
   /**
@@ -161,9 +162,6 @@ export default class ReactBubbleChartD3 {
     this.tooltipFunc = props.tooltipFunc;
     this.tooltipShouldShow = props.tooltipShouldShow;
 
-    // Intialize the styling
-    this.tooltip.style('display', 'none');
-
     if (!this.shouldCreateTooltip) {
       return;
     }
@@ -225,7 +223,7 @@ export default class ReactBubbleChartD3 {
    * Remove old bubbles.
    * Maintain consistencies between this.svg and this.html
    */
-  update(props) {
+  update(props, prevProps) {
     this.adjustSize();
     // Initialize color legend values and color range values
     // color range is just an array of the hex values
@@ -385,6 +383,8 @@ export default class ReactBubbleChartD3 {
       .style('width', 0)
       .style('height', 0)
       .remove();
+
+    this._updateTooltip(props.tooltippedDataId, prevProps.tooltippedDataId);
   }
 
   /**
@@ -400,6 +400,40 @@ export default class ReactBubbleChartD3 {
       return;
     }
 
+    this.onTooltip(true, d);
+  }
+
+  /**
+   * On tooltip mouseout, hide the tooltip.
+   */
+  _tooltipMouseOut(d) {
+    if (!this.shouldCreateTooltip) {
+      return;
+    }
+
+    if (!this.tooltipShouldShow(d)) {
+      return;
+    }
+
+    this.onTooltip(false, d);
+  }
+
+  _updateTooltip(tooltippedDataId, prevTooltippedDataId) {
+    if (tooltippedDataId === prevTooltippedDataId) {
+      return;
+    }
+
+    const tooltippedData = this.circles
+      .data()
+      .find(d => d.data._id === tooltippedDataId);
+
+    this._hideTooltip();
+    if (tooltippedData) {
+      this._showTooltip(tooltippedData);
+    }
+  }
+
+  _showTooltip(d) {
     // Fade the popup fill mixing the shape fill with 80% white
     const fill = this.color(d.data.colorValue);
     const backgroundColor = d3.rgb(
@@ -415,8 +449,6 @@ export default class ReactBubbleChartD3 {
         return;
       }
     }
-
-    this.onTooltip(d);
 
     if (this.tooltipMode !== 'component') {
       for (const { css, prop, display } of this.tooltipProps) {
@@ -479,18 +511,7 @@ export default class ReactBubbleChartD3 {
       .style('top', top + 'px');
   }
 
-  /**
-   * On tooltip mouseout, hide the tooltip.
-   */
-  _tooltipMouseOut(d) {
-    if (!this.shouldCreateTooltip) {
-      return;
-    }
-
-    if (!this.tooltipShouldShow(d)) {
-      return;
-    }
-
+  _hideTooltip() {
     this.tooltip.style('display', 'none')
       .style('width', '')
       .style('top', '')
