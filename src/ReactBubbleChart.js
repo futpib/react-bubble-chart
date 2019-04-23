@@ -227,10 +227,6 @@ class ReactBubbleChart extends React.Component {
     this.bubbleChart.destroy(this.containerRef.current);
   }
 
-  triggerTooltip(nodeId) {
-    this.bubbleChart.triggerTooltip(nodeId);
-  }
-
   /** On a debounce, adjust the size of our graph area and then update the chart */
   _handleResize() {
     if (this.__resizeTimeout) {

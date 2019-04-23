@@ -497,19 +497,6 @@ export default class ReactBubbleChartD3 {
       .style('left', '');
   }
 
-  triggerTooltip(nodeId) {
-    const d = this.circles
-      .enter()
-      .data()
-      .find(d => d.data._id === nodeId);
-
-    if (!d) {
-      return;
-    }
-
-    this._tooltipMouseOver(d);
-  }
-
   /** Any necessary cleanup */
   destroy() { }
 }

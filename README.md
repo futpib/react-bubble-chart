@@ -235,13 +235,6 @@ that is being tooltipped. You probably want `d.data` to render the tooltip.
 A function that is passed the d3 data object to determine if the node hover should
 should trigger tooltip.
 
-### `instance.triggerTooltip(_id)`
-
-An instance method to trigger the tooltip programmatically. Pass the d3 data object
-`_id` value, and a tooltip will be displayed for the node with given `_id`.
-
-Intended for use with react refs.
-
 ### `selectedColor` (optional)
 
 String hex value.
