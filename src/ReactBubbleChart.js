@@ -132,9 +132,34 @@ import ReactBubbleChartD3 from './ReactBubbleChartD3';
 // for more info, see the README
 
 class ReactBubbleChart extends React.Component {
-  static getDerivedStateFromProps({ tooltipFunc, tooltipComponent }) {
+  static getDerivedStateFromProps({ tooltipFunc, tooltipComponent, ...props }) {
+    const tooltipMode = tooltipFunc ? 'func' : (tooltipComponent ? 'component' : 'none');
+
     return {
-      tooltipMode: tooltipFunc ? 'func' : (tooltipComponent ? 'component' : 'none'),
+      tooltipMode,
+
+      chartState: {
+        data: props.data,
+        colorLegend: props.colorLegend,
+        fixedDomain: props.fixedDomain,
+        selectedColor: props.selectedColor,
+        selectedTextColor: props.selectedTextColor,
+        onClick: props.onClick,
+        smallDiameter: props.smallDiameter,
+        mediumDiameter: props.mediumDiameter,
+        legendSpacing: props.legendSpacing,
+        legend: props.legend,
+
+        tooltip: props.tooltip,
+        tooltipProps: props.tooltipProps,
+        tooltipMode,
+        tooltipFunc,
+        tooltipShouldShow: props.tooltipShouldShow,
+
+        fontSizeFactor: props.fontSizeFactor,
+        duration: props.duration,
+        delay: props.delay,
+      },
     };
   }
 
@@ -186,38 +211,14 @@ class ReactBubbleChart extends React.Component {
     this.bubbleChart = new ReactBubbleChartD3(
       this.containerRef.current,
       this.tooltipRef.current,
-      this.getChartState(),
+      this.state.chartState,
       this.handleTooltip,
     );
   }
 
   /** When we update, update our friend, the bubble chart */
   componentDidUpdate() {
-    this.bubbleChart.update(this.getChartState());
-  }
-
-  /** Define what props get passed down to the d3 chart */
-  getChartState() {
-    return {
-      data: this.props.data,
-      colorLegend: this.props.colorLegend,
-      fixedDomain: this.props.fixedDomain,
-      selectedColor: this.props.selectedColor,
-      selectedTextColor: this.props.selectedTextColor,
-      onClick: this.props.onClick,
-      smallDiameter: this.props.smallDiameter,
-      mediumDiameter: this.props.mediumDiameter,
-      legendSpacing: this.props.legendSpacing,
-      legend: this.props.legend,
-      tooltip: this.props.tooltip,
-      tooltipMode: this.state.tooltipMode,
-      tooltipProps: this.props.tooltipProps,
-      tooltipFunc: this.props.tooltipFunc,
-      tooltipShouldShow: this.props.tooltipShouldShow,
-      fontSizeFactor: this.props.fontSizeFactor,
-      duration: this.props.duration,
-      delay: this.props.delay,
-    };
+    this.bubbleChart.update(this.state.chartState);
   }
 
   /** When we're piecing out, remove the handler and destroy the chart */
@@ -237,8 +238,7 @@ class ReactBubbleChart extends React.Component {
     }
 
     this.__resizeTimeout = setTimeout(() => {
-      this.bubbleChart.adjustSize();
-      this.bubbleChart.update(this.getChartState());
+      this.bubbleChart.update(this.state.chartState);
       delete this.__resizeTimeout;
     }, 200);
   }
