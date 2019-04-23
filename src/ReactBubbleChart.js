@@ -167,7 +167,9 @@ class ReactBubbleChart extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {};
+    this.state = {
+      tooltippedDataId: props.initialTooltippedDataId,
+    };
 
     // Define the method this way so that we have a clear reference to it
     // this is necessary so that window.removeEventListener will work properly
@@ -185,7 +187,13 @@ class ReactBubbleChart extends React.Component {
       tooltipClassName,
       tooltipComponent: TooltipComponent,
     } = this.props;
-    const { tooltipMode, tooltipComponentProps } = this.state;
+    const {
+      tooltipMode,
+      tooltippedDataId,
+      bubbleChartInitialized,
+    } = this.state;
+
+    const tooltippedNode = bubbleChartInitialized && tooltippedDataId && this.bubbleChart.findNodeByDataId(tooltippedDataId);
 
     return (
       <div
@@ -196,9 +204,9 @@ class ReactBubbleChart extends React.Component {
           ref={this.tooltipRef}
           className={'bubble-chart-tooltip ' + tooltipClassName}
         >
-          {tooltipMode === 'component' && tooltipComponentProps && (
+          {tooltipMode === 'component' && tooltippedNode && (
             <TooltipComponent
-              {...tooltipComponentProps}
+              d={tooltippedNode}
             />
           )}
         </div>
@@ -209,12 +217,17 @@ class ReactBubbleChart extends React.Component {
   /** When we mount, intialize resize handler and create the bubbleChart */
   componentDidMount() {
     window.addEventListener('resize', this.handleResize);
+
     this.bubbleChart = new ReactBubbleChartD3(
       this.containerRef.current,
       this.tooltipRef.current,
       this.state.chartState,
       this.handleTooltip,
     );
+
+    this.setState({
+      bubbleChartInitialized: true,
+    });
   }
 
   /** When we update, update our friend, the bubble chart */
@@ -242,17 +255,9 @@ class ReactBubbleChart extends React.Component {
   }
 
   _handleTooltip(tooltipped, d) {
-    const statePatch = {
+    this.setState({
       tooltippedDataId: tooltipped ? d.data._id : null,
-    };
-
-    if (tooltipped && this.state.tooltipMode === 'component') {
-      statePatch.tooltipComponentProps = {
-        d,
-      };
-    }
-
-    this.setState(statePatch);
+    });
   }
 }
 

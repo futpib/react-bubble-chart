@@ -224,6 +224,8 @@ export default class ReactBubbleChartD3 {
    * Maintain consistencies between this.svg and this.html
    */
   update(props, prevProps) {
+    this.props = props;
+
     this.adjustSize();
     // Initialize color legend values and color range values
     // color range is just an array of the hex values
@@ -384,7 +386,14 @@ export default class ReactBubbleChartD3 {
       .style('height', 0)
       .remove();
 
-    this._updateTooltip(props.tooltippedDataId, prevProps.tooltippedDataId);
+    this._updateTooltip(
+      props.tooltippedDataId,
+      prevProps.tooltippedDataId,
+      props.data,
+      prevProps.data,
+    );
+
+    this.adjustTooltipPosition();
   }
 
   /**
@@ -418,18 +427,21 @@ export default class ReactBubbleChartD3 {
     this.onTooltip(false, d);
   }
 
-  _updateTooltip(tooltippedDataId, prevTooltippedDataId) {
-    if (tooltippedDataId === prevTooltippedDataId) {
+  findNodeByDataId(id) {
+    return this.circles.data().concat(this.circles.enter().data())
+      .find(d => d.data._id === id);
+  }
+
+  _updateTooltip(tooltippedDataId, prevTooltippedDataId, data, prevData) {
+    if (tooltippedDataId === prevTooltippedDataId && data === prevData) {
       return;
     }
 
-    const tooltippedData = this.circles
-      .data()
-      .find(d => d.data._id === tooltippedDataId);
+    const tooltippedNode = tooltippedDataId && this.findNodeByDataId(tooltippedDataId);
 
     this._hideTooltip();
-    if (tooltippedData) {
-      this._showTooltip(tooltippedData);
+    if (tooltippedNode) {
+      this._showTooltip(tooltippedNode);
     }
   }
 
@@ -458,6 +470,22 @@ export default class ReactBubbleChartD3 {
 
     this.tooltip.style('display', 'block');
 
+    this.tooltip
+      .style('background-color', backgroundColor)
+      .style('border-color', fill);
+
+    this.adjustTooltipPosition();
+  }
+
+  adjustTooltipPosition() {
+    const { tooltippedDataId } = this.props;
+
+    const d = tooltippedDataId && this.findNodeByDataId(tooltippedDataId);
+    if (!d) {
+      return;
+    }
+
+    const tooltipNode = this.tooltip.node();
     const width = tooltipNode.offsetWidth + 1; // +1 for rounding reasons
     const height = tooltipNode.offsetHeight;
     const buffer = 5;
@@ -504,8 +532,6 @@ export default class ReactBubbleChartD3 {
     this.tooltip.classed(side, true);
 
     this.tooltip
-      .style('background-color', backgroundColor)
-      .style('border-color', fill)
       .style('width', width + 'px')
       .style('left', left + 'px')
       .style('top', top + 'px');
