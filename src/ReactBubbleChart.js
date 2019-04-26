@@ -135,6 +135,10 @@ class ReactBubbleChart extends React.Component {
   static getDerivedStateFromProps({ tooltipFunc, tooltipComponent, ...props }, state) {
     const tooltipMode = tooltipFunc ? 'func' : (tooltipComponent ? 'component' : 'none');
 
+    const tooltipTargetChangedSinceLastDataUpdate = (state.prevData === props.data) ?
+          state.tooltipTargetChangedSinceLastDataUpdate :
+          false;
+
     return {
       tooltipMode,
 
@@ -155,13 +159,19 @@ class ReactBubbleChart extends React.Component {
         tooltipMode,
         tooltipFunc,
         tooltipShouldShow: props.tooltipShouldShow,
-        tooltippedDataId: state.tooltippedDataId,
         tooltipMargin: props.tooltipMargin,
+
+        tooltippedDataId: tooltipTargetChangedSinceLastDataUpdate ?
+          state.tooltippedDataId :
+          props.initialTooltippedDataId,
 
         fontSizeFactor: props.fontSizeFactor,
         duration: props.duration,
         delay: props.delay,
       },
+
+      prevData: props.data,
+      tooltipTargetChangedSinceLastDataUpdate,
     };
   }
 
@@ -169,7 +179,8 @@ class ReactBubbleChart extends React.Component {
     super(props);
 
     this.state = {
-      tooltippedDataId: props.initialTooltippedDataId,
+      tooltippedDataId: null,
+      tooltipTargetChangedSinceLastDataUpdate: false,
     };
 
     // Define the method this way so that we have a clear reference to it
@@ -190,11 +201,13 @@ class ReactBubbleChart extends React.Component {
     } = this.props;
     const {
       tooltipMode,
-      tooltippedDataId,
+      chartState: { tooltippedDataId },
       bubbleChartInitialized,
     } = this.state;
 
-    const tooltippedNode = bubbleChartInitialized && tooltippedDataId && this.bubbleChart.findNodeByDataId(tooltippedDataId);
+    const tooltippedNode = bubbleChartInitialized &&
+          tooltippedDataId &&
+          this.bubbleChart.findNodeByDataId(tooltippedDataId);
 
     return (
       <div
@@ -258,6 +271,7 @@ class ReactBubbleChart extends React.Component {
   _handleTooltip(tooltipped, d) {
     this.setState({
       tooltippedDataId: tooltipped ? d.data._id : null,
+      tooltipTargetChangedSinceLastDataUpdate: true,
     });
   }
 }
