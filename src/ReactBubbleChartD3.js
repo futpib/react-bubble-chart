@@ -161,6 +161,7 @@ export default class ReactBubbleChartD3 {
     this.tooltipMode = props.tooltipMode;
     this.tooltipFunc = props.tooltipFunc;
     this.tooltipShouldShow = props.tooltipShouldShow;
+    this.tooltipMargin = props.tooltipMargin;
 
     if (!this.shouldCreateTooltip) {
       return;
@@ -488,7 +489,7 @@ export default class ReactBubbleChartD3 {
     const tooltipNode = this.tooltip.node();
     const width = tooltipNode.offsetWidth + 1; // +1 for rounding reasons
     const height = tooltipNode.offsetHeight;
-    const buffer = 5;
+    const margin = this.tooltipMargin;
     const htmlNode = this.html.node();
     const origin = {
       x: htmlNode.offsetLeft,
@@ -499,33 +500,33 @@ export default class ReactBubbleChartD3 {
     // (d.y - height/2) which'll put the tooltip in the middle of the bubble.
     // we need to account for if this'll put it out of bounds.
     let top;
-    // If it goes above the bounds, have the top be the buffer
+    // If it goes above the bounds, have the top be the margin
     if (origin.y + d.y - height < 0) {
-      top = buffer;
-    // If it goes below the bounds, have its buttom be a buffer length away
+      top = margin;
+    // If it goes below the bounds, have its buttom be a margin length away
     } else if (origin.y + d.y + height / 2 > this.container.offsetHeight) {
-      top = this.container.offsetHeight - height - buffer;
+      top = this.container.offsetHeight - height - margin;
     // Otherwise smack this bad boy in the middle of its bubble
     } else {
       top = d.y - height / 2;
     }
 
     // Calculate where the left is going to be. ideally it is
-    // (d.x + d.r + buffer) which will put the tooltip to the right
+    // (d.x + d.r + margin) which will put the tooltip to the right
     // of the bubble. we need to account for the case where this puts
     // the tooltip out of bounds.
     let left;
     let side = 'right';
     // If there's room to put it on the right of the bubble, do so
-    if (origin.x + d.x + d.r + width + buffer < this.container.offsetWidth) {
-      left = d.x + d.r + buffer;
+    if (origin.x + d.x + d.r + width + margin < this.container.offsetWidth) {
+      left = d.x + d.r + margin;
     // If there's room to put it on the left of the bubble, do so
-    } else if (origin.x + d.x - d.r - width - buffer > 0) {
-      left = d.x - d.r - width - buffer;
+    } else if (origin.x + d.x - d.r - width - margin > 0) {
+      left = d.x - d.r - width - margin;
       side = 'left';
     // Otherwise put it on the right part of its container
     } else {
-      left = this.container.offsetWidth - width - buffer;
+      left = this.container.offsetWidth - width - margin;
     }
 
     this.tooltip.classed('left right', false);

@@ -235,6 +235,10 @@ that is being tooltipped. You probably want `d.data` to render the tooltip.
 A function that is passed the d3 data object to determine if the node hover should
 should trigger tooltip.
 
+### `tooltipMargin` (optional)
+
+A margin between tooltip and tooltipped node in `px`, defaults to `5`;
+
 ### `initialTooltippedDataId` (optional)
 
 Show tooltip on initial render next to a node with this `data._id`.

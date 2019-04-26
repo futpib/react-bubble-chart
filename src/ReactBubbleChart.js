@@ -156,6 +156,7 @@ class ReactBubbleChart extends React.Component {
         tooltipFunc,
         tooltipShouldShow: props.tooltipShouldShow,
         tooltippedDataId: state.tooltippedDataId,
+        tooltipMargin: props.tooltipMargin,
 
         fontSizeFactor: props.fontSizeFactor,
         duration: props.duration,
@@ -264,6 +265,7 @@ class ReactBubbleChart extends React.Component {
 ReactBubbleChart.defaultProps = {
   className: '',
   tooltipClassName: '',
+  tooltipMargin: 5,
   onClick: () => {},
   tooltipShouldShow: () => true,
 };
